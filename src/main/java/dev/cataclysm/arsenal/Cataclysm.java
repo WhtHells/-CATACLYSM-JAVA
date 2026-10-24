@@ -33,7 +33,7 @@ public final class Cataclysm implements ModInitializer {
             BlockHitResult hit = world.raycast(new RaycastContext(from, to, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
             Vec3d target = hit.getType() == HitResult.Type.MISS ? to : hit.getPos();
             if (world.isClient) {
-                CataclysmClient.beginStrike(target);
+                // Client rendering is triggered by a dedicated client-side item hook.
             } else if (world instanceof ServerWorld serverWorld) {
                 STRIKES.add(new PendingStrike(serverWorld, target, 64));
             }
