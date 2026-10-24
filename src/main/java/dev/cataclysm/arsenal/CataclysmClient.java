@@ -3,6 +3,11 @@ package dev.cataclysm.arsenal;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.minecraft.util.TypedActionResult;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
@@ -23,6 +28,16 @@ public final class CataclysmClient implements ClientModInitializer {
     public static void beginStrike(Vec3d target) { VISUALS.add(new StrikeVisual(target, System.nanoTime())); }
 
     @Override public void onInitializeClient() {
+        UseItemCallback.EVENT.register((player, world, hand) -> {
+            if (world.isClient && player.getStackInHand(hand).isOf(Cataclysm.SOLAR_LANCE)
+                && !player.getItemCooldownManager().isCoolingDown(Cataclysm.SOLAR_LANCE)) {
+                Vec3d from = player.getCameraPosVec(1.0f);
+                Vec3d to = from.add(player.getRotationVec(1.0f).multiply(110));
+                BlockHitResult hit = world.raycast(new RaycastContext(from, to, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, player));
+                beginStrike(hit.getType() == HitResult.Type.MISS ? to : hit.getPos());
+            }
+            return TypedActionResult.pass(player.getStackInHand(hand));
+        });
         WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) { VISUALS.clear(); return; }
